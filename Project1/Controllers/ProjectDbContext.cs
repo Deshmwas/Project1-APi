@@ -10,6 +10,13 @@ namespace Project1.Controllers
         }
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Order>()
+                .Property(o => o.OrderId)
+                .ValueGeneratedOnAdd();
+        }
         public string ImagePath { get; set; }
     }
 }

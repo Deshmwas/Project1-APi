@@ -6,7 +6,7 @@ using Project1.Models;
 
 namespace Project1.Controllers
 {
-    
+    [EnableCors("CorsPolicy")]
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -25,12 +25,15 @@ namespace Project1.Controllers
                 {
                     Id = p.Id,
                     Name = p.Name,
+                    Stock = p.Stock,
                     Description = p.Description,
                     Price = p.Price,
                     ImageData = p.Image != null ? Convert.ToBase64String(p.Image) : null,
-                    UserEmail = p.UserEmail
+                    UserEmail = p.UserEmail,
+                    TotalPrice = p.TotalPrice
                 })
                 .ToListAsync();
+
 
             return Ok(products);
         }
@@ -43,8 +46,11 @@ namespace Project1.Controllers
                 {
                     Id = p.Id,
                     Name = p.Name,
+                    Stock = p.Stock,
                     Description = p.Description,
                     Price = p.Price,
+
+
                     ImageData = p.Image != null ? Convert.ToBase64String(p.Image) : null,
                     UserEmail = p.UserEmail
                 })
@@ -58,8 +64,42 @@ namespace Project1.Controllers
             return Ok(product);
         }
 
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<Product>>> Search(string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return BadRequest("Query parameter is required.");
+            }
 
-        [HttpPost]
+            var products = await _context.Products
+                .Where(p => p.Name.ToLower().Contains(query.ToLower()) || p.Description.ToLower().Contains(query.ToLower()))
+                .Select(p => new ProductViewModel
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Stock = p.Stock,
+                    Description = p.Description,
+                    Price = p.Price,
+                    ImageData = p.Image != null ? Convert.ToBase64String(p.Image) : null,
+                    UserEmail = p.UserEmail,
+                    TotalPrice = p.TotalPrice
+                })
+                .ToListAsync();
+
+            if (products == null || products.Count == 0)
+            {
+                return Ok(new { message = "No products found for the given search query." });
+            }
+
+            return Ok(products);
+        }
+    
+
+
+
+
+    [HttpPost]
         public async Task<IActionResult> Post([FromForm] Product product)
         {
             if (!ModelState.IsValid)
@@ -87,13 +127,15 @@ namespace Project1.Controllers
         {
             if (id != product.Id)
             {
-                return BadRequest("The ID in the URL and the ID in the request payload do not match");
+               
+                return Ok(new { message = "The ID in the URL and the ID in the request payload do not match" });
             }
 
             var existingProduct = await _context.Products.FindAsync(id);
             if (existingProduct == null)
             {
-                return NotFound("The product with the specified ID was not found");
+               
+                return Ok(new { message = "The product with the specified ID was not found" });
             }
 
             if (!ModelState.IsValid)
@@ -101,24 +143,42 @@ namespace Project1.Controllers
                 return BadRequest(ModelState);
             }
 
+            byte[] img;
+
             var file = Request.Form.Files.FirstOrDefault();
             if (file != null)
             {
+                ///cheretriev original file
                 using (var memoryStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memoryStream);
                     product.Image = memoryStream.ToArray();
                 }
+
+                existingProduct.Image = product.Image;
+                existingProduct.Name = product.Name;
+                existingProduct.Description = product.Description;
+                existingProduct.Price = product.Price;
+                existingProduct.Stock = product.Stock;
+
+                _context.Entry(existingProduct).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Product Updated  Successfully" });
+            }
+            else
+            {
+              //  existingProduct.Image = product.Image;
+                existingProduct.Name = product.Name;
+                existingProduct.Description = product.Description;
+                existingProduct.Price = product.Price;
+                existingProduct.Stock = product.Stock;
+
+                _context.Entry(existingProduct).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Product Updated  Successfully" });
             }
 
-            existingProduct.Image = product.Image;
-            existingProduct.Name = product.Name;
-            existingProduct.Description = product.Description;
-            existingProduct.Price = product.Price;
-
-            _context.Entry(existingProduct).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return Ok(existingProduct.Name + "  " + "Updated Successfully");
+            
         }
 
         [HttpDelete("{id}")]

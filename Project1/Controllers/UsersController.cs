@@ -58,20 +58,21 @@ namespace Project1.Controllers
             }
 
             // Check if user exists
-            var existingUser = _context.Users.SingleOrDefault(u => u.UserName == user.UserName || u.Email == user.Email);
+            var existingUser = _context.Users.SingleOrDefault(u => u.UserName == user.UserName );
             if (existingUser == null)
             {
-                return BadRequest(new { message = "Incorrect username or email or password." });
+                return BadRequest(new { message = "Incorrect username or password." });
             }
 
             // Verify password
             var passwordVerified = VerifyPassword(user.Password, existingUser.Password);
             if (!passwordVerified)
             {
-                return BadRequest(new { message = "Incorrect username or email or password." });
+                return BadRequest(new { message = "Incorrect username or password." });
             }
 
-             return Ok(new { message = "Successfully logged in." });
+            return Ok(new { message = "Successfully logged in.", userId = existingUser.Id });
+
         }
 
         private static string HashPassword(string password)
