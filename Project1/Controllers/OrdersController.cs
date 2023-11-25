@@ -20,13 +20,29 @@ namespace Project1.Controllers
         }
 
         // GET: api/orders
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+        public async Task<ActionResult<IEnumerable<OrderViewModel>>> GetOrders()
         {
-            return await _context.Orders.ToListAsync();
+            var orders = await _context.Orders.Select(order => new OrderViewModel
+            {
+                OrderId = order.OrderId,
+                ProductId = order.ProductId,
+                UserId = order.UserId,
+                // Include additional properties from the Order entity
+                OrderDate = order.OrderDate,
+                Quantity = order.Quantity,
+                TotalPrice = order.TotalPrice,
+                Status = order.Status,
+                ShippingDate = order.ShippingDate,
+                ShippingAddress = order.ShippingAddress
+            }).ToListAsync();
+
+            return Ok(orders);
         }
 
-       
+
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id)
         {
@@ -72,7 +88,7 @@ namespace Project1.Controllers
                     return BadRequest(applicationResponse);
                 }
 
-                //store orders in database
+                //store orders in databases
                 var order = new Order
                 {
                     ProductId = orderViewModels[cartItem].ProductId,
@@ -86,13 +102,13 @@ namespace Project1.Controllers
                 };
 
                 _context.Orders.Add(order);
+                product.Stock -= orderViewModels[cartItem].Quantity ?? 0;
                 await _context.SaveChangesAsync();
             }
 
-            //applicationResponse.responseCode = false;
-            //applicationResponse.responseMessage = "Orders placed successfully.";
-            return Ok(new { message = "Orders placed successfully." });
-            //return Ok(applicationResponse);
+            applicationResponse.responseCode = true;
+            applicationResponse.responseMessage = "Orders placed successfully.";
+            return Ok(applicationResponse);
         }
 
            

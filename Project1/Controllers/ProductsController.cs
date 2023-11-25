@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Project1.Models;
+using Project1.Services;
 
 namespace Project1.Controllers
 {
@@ -12,10 +13,13 @@ namespace Project1.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly ProjectDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public ProductsController(ProjectDbContext context)
+        public ProductsController(ProjectDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
+
         }
         [HttpGet]
         public async Task<IActionResult> Get()
@@ -94,12 +98,8 @@ namespace Project1.Controllers
 
             return Ok(products);
         }
-    
 
-
-
-
-    [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> Post([FromForm] Product product)
         {
             if (!ModelState.IsValid)
@@ -119,22 +119,36 @@ namespace Project1.Controllers
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
+
+            // Check if stock is about to be depleted (e.g., less than 10 items)
+            if (product.Stock < 10)
+            {
+                // Send email alert
+                var emailSubject = "Stock Alert";
+                var emailBody = $"The stock of {product.Name} is running low. Current stock: {product.Stock}";
+
+                // Assuming you have an email address to send the alert to.
+                var adminEmail = "mwangiderrick27@gmail.com";
+
+                await _emailService.SendEmailAsync(adminEmail, emailSubject, emailBody);
+            }
+
             return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
         }
+
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(int id, [FromForm] Product product)
         {
             if (id != product.Id)
             {
-               
                 return Ok(new { message = "The ID in the URL and the ID in the request payload do not match" });
             }
 
             var existingProduct = await _context.Products.FindAsync(id);
             if (existingProduct == null)
             {
-               
                 return Ok(new { message = "The product with the specified ID was not found" });
             }
 
@@ -148,7 +162,7 @@ namespace Project1.Controllers
             var file = Request.Form.Files.FirstOrDefault();
             if (file != null)
             {
-                ///cheretriev original file
+                // Retrieve the original file
                 using (var memoryStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memoryStream);
@@ -163,11 +177,25 @@ namespace Project1.Controllers
 
                 _context.Entry(existingProduct).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+
+                // Check if stock is about to be depleted (e.g., less than 10 items)
+                if (existingProduct.Stock < 10)
+                {
+                    // Send email alert
+                    var emailSubject = "Stock Alert";
+                    var emailBody = $"The stock of {existingProduct.Name} is running low. Current stock: {existingProduct.Stock}";
+
+                    // Assuming you have an email address to send the alert to.
+                    var adminEmail = "mwangiderrick27@gmail.com";
+
+                    await _emailService.SendEmailAsync(adminEmail, emailSubject, emailBody);
+                }
+
                 return Ok(new { message = "Product Updated  Successfully" });
             }
             else
             {
-              //  existingProduct.Image = product.Image;
+                // existingProduct.Image = product.Image;
                 existingProduct.Name = product.Name;
                 existingProduct.Description = product.Description;
                 existingProduct.Price = product.Price;
@@ -175,11 +203,24 @@ namespace Project1.Controllers
 
                 _context.Entry(existingProduct).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+
+                // Check if stock is about to be depleted (e.g., less than 10 items)
+                if (existingProduct.Stock < 10)
+                {
+                    // Send email alert
+                    var emailSubject = "Stock Alert";
+                    var emailBody = $"The stock of {existingProduct.Name} is running low. Current stock: {existingProduct.Stock}";
+
+                    // Assuming you have an email address to send the alert to.
+                    var adminEmail = "mwangiderrick27@gmail.com";
+
+                    await _emailService.SendEmailAsync(adminEmail, emailSubject, emailBody);
+                }
+
                 return Ok(new { message = "Product Updated  Successfully" });
             }
-
-            
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

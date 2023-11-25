@@ -14,5 +14,6 @@ namespace Project1.Controllers
         public DateTime? ShippingDate { get; set; }
         public string? ShippingAddress { get; set; }
         public DateTime? OrderDate { get; internal set; }
+        public int OrderId { get; internal set; }
     }
 }

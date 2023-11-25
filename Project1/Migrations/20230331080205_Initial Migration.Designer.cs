@@ -12,7 +12,7 @@ using Project1.Controllers;
 namespace Project1.Migrations
 {
     [DbContext(typeof(ProjectDbContext))]
-    [Migration("20230320093835_Initial Migration")]
+    [Migration("20230331080205_Initial Migration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -87,6 +87,9 @@ namespace Project1.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Quantity")
                         .HasColumnType("int");
 
                     b.Property<int>("Stock")

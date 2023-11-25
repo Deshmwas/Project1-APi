@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Project1.Controllers;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using Project1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddDbContext<ProjectDbContext>(options =>
       options.UseSqlServer(builder.Configuration.GetConnectionString("ProjectDbConnectionString")));
 
@@ -18,6 +20,7 @@ builder.Services.AddCors(options =>
                .AllowAnyHeader();
     });
 });
+
 
 builder.Services.AddControllers();
 

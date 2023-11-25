@@ -13,5 +13,6 @@
         public string? ImageData => Image != null ? Convert.ToBase64String(Image) : null;
         public virtual ICollection<Order>? Orders { get; set; }
         public int ProductId { get; internal set; }
+        public int? Quantity { get; internal set; }
     }
 }
